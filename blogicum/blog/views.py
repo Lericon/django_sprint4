@@ -77,11 +77,16 @@ def profile(request, username):
     """Возвращает профиль пользователя."""
     template = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
-    posts_list = (
-        user.posts
-        .annotate(comment_count=Count('comments'))
-        .order_by('-pub_date')
-    )
+    # Если текущий пользователь - автор, то
+    # показываем все посты, иначе только опубликованные
+    if request.user == user:
+        posts_list = (
+            user.posts
+            .annotate(comment_count=Count('comments'))
+            .order_by('-pub_date')
+        )
+    else:
+        posts_list = get_posts(user.posts)
     page_obj = get_paginator(request, posts_list)
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, template, context)
